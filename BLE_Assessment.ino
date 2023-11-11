@@ -10,6 +10,9 @@ BLEUUID writableCharID("2b7d3514-7fe4-11ee-b962-0242ac120002");
 // read-only characteristic for ellapsed time
 BLEUUID ellapsedTimeReadOnlyID("66869ab8-8095-11ee-b962-0242ac120002");
 
+// read-only characteristic for notify
+BLEUUID notifyReadOnlyID("8ee26f14-eabf-4e45-9f30-d2edecb001e4");
+
 // store for our writeable data
 uint8_t writable_store[1];
 
@@ -35,6 +38,7 @@ MyCallbacks cb;
 // set the ellapsed time characteristic variable to be global so it can be
 // periodacally updated in the loop func
 BLECharacteristic *ellapsedCharacteristic;
+BLECharacteristic *notifyCharacteristic;
 
 void setup() {
   // Enable the LED
@@ -60,6 +64,16 @@ void setup() {
     ellapsedTimeReadOnlyID, 
     BLECharacteristic::PROPERTY_READ
   );
+
+  // create notify characteristic
+  notifyCharacteristic = pService->createCharacteristic(
+    notifyReadOnlyID,
+    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY
+  );
+
+  // // set initial value
+  uint8_t v = 0;
+  notifyCharacteristic->setValue(&v, sizeof(v));
 
 
   readCharacteristic->setValue("Arduino says hi!");
@@ -98,4 +112,11 @@ void loop() {
 
   // convert to seconds
   unsigned long ellapsedInSeconds = ellapsed / 1000;
+
+  /**
+    write to characteristic.
+    typecast necessary to convert unsigned int. Bluetooth interpreter (iPhone)
+    needs to parse the data correctly (hex or unsigned long)
+  */
+  ellapsedCharacteristic->setValue( (uint8_t*) &ellapsedInSeconds, sizeof(ellapsedInSeconds));
 }
