@@ -5,14 +5,23 @@
 
 BLEUUID serviceID("5e89440c-7fda-11ee-b962-0242ac120002");
 BLEUUID readonlyCharID("5e894812-7fda-11ee-b962-0242ac120002");
-BLEUUID writeableCharID("2b7d3514-7fe4-11ee-b962-0242ac120002");
+BLEUUID writableCharID("2b7d3514-7fe4-11ee-b962-0242ac120002");
+
+// read-only characteristic for ellapsed time
+BLEUUID ellapsedTimeReadOnlyID("66869ab8-8095-11ee-b962-0242ac120002");
+
+// store for our writeable data
+uint8_t writable_store[1];
+
+// set time for initialisation of program
+unsigned long start = millis();
 
 // bluetooth callback handler
 class MyCallbacks: public BLECharacteristicCallbacks { // inheritence syntax
   void onWrite(BLECharacteristic *pCharacteristic) {
 
     // if the characteristic matches our writable one
-    if (writeableCharID.equals(pCharacteristic->getUUID())) {
+    if (writableCharID.equals(pCharacteristic->getUUID())) {
       // retrieve the data
       uint8_t *value = pCharacteristic->getData();
       digitalWrite(LED_BUILTIN, value[0]?HIGH:LOW);
@@ -20,7 +29,17 @@ class MyCallbacks: public BLECharacteristicCallbacks { // inheritence syntax
   }
 };
 
+// create callback handler 
+MyCallbacks cb; 
+
+// set the ellapsed time characteristic variable to be global so it can be
+// periodacally updated in the loop func
+BLECharacteristic *ellapsedCharacteristic;
+
 void setup() {
+  // Enable the LED
+  pinMode(LED_BUILTIN, OUTPUT);
+
   // initialse device device name
   BLEDevice::init("Christian's Arduino");
 
@@ -36,7 +55,23 @@ void setup() {
     BLECharacteristic::PROPERTY_READ
   );
 
+  // create the ellapsed time characteristic
+  ellapsedCharacteristic = pService->createCharacteristic(
+    ellapsedTimeReadOnlyID, 
+    BLECharacteristic::PROPERTY_READ
+  );
+
+
   readCharacteristic->setValue("Arduino says hi!");
+
+  //An example writable characteristic
+  BLECharacteristic *writeCharacteristic = pService->createCharacteristic(
+  writableCharID,
+  BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
+  //bit-wise OR is used to enable both properties.
+  writeCharacteristic ->setValue(writable_store, 1);
+  writeCharacteristic ->setCallbacks(&cb);
+
 
   // start the service 
   pService->start();
@@ -57,4 +92,10 @@ void setup() {
 void loop() {
   // save power
   delay(1000);
+
+  // calculate ellapsed time since start of program
+  unsigned long ellapsed = millis() - start;
+
+  // convert to seconds
+  unsigned long ellapsedInSeconds = ellapsed / 1000;
 }
