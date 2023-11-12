@@ -103,9 +103,9 @@ void setup() {
   BLEDevice::startAdvertising();
 }
 
+uint8_t notifyAccumulator = 0;
+
 void loop() {
-  // save power
-  delay(1000);
 
   // calculate ellapsed time since start of program
   unsigned long ellapsed = millis() - start;
@@ -119,4 +119,15 @@ void loop() {
     needs to parse the data correctly (hex or unsigned long)
   */
   ellapsedCharacteristic->setValue( (uint8_t*) &ellapsedInSeconds, sizeof(ellapsedInSeconds));
+
+  // increment notif accumulator
+  notifyAccumulator++;
+  notifyCharacteristic->setValue( (uint8_t*) &notifyAccumulator, sizeof(notifyAccumulator));
+  
+  // if (notifyCharacteristic->subscribed()) {
+  //   notifyCharacteristic->notify();
+  // }
+
+  delay(5000);
+
 }
